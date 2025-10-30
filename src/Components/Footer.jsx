@@ -10,6 +10,10 @@ import {
   ListItemText,
   Divider,
 } from "@mui/material";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import PaymentIcon from "@mui/icons-material/Payment";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import TwitterIcon from "@mui/icons-material/Twitter";
@@ -63,22 +67,22 @@ const Footer = () => {
                 <ListItemText primary="Córdoba, Argentina" />
               </ListItem>
               <ListItem disablePadding>
-      <ListItemIcon sx={{ color: "#fff", minWidth: 32 }}>
-        <WhatsAppIcon />
-      </ListItemIcon>
-      <ListItemText 
-        primary={
-          <a 
-            href="https://wa.me/5493511234567?text=¡Hola!%20quiero%20consultar" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={{ color: "inherit", textDecoration: "none" }}
-          >
-            +54 9 351 123 4567
-          </a>
-        } 
-      />
-    </ListItem>
+                <ListItemIcon sx={{ color: "#fff", minWidth: 32 }}>
+                  <WhatsAppIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <a
+                      href="https://wa.me/5493511234567?text=¡Hola!%20quiero%20consultar"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "inherit", textDecoration: "none" }}
+                    >
+                      +54 9 351 123 4567
+                    </a>
+                  }
+                />
+              </ListItem>
 
               <ListItem disablePadding>
                 <ListItemIcon sx={{ color: "#fff", minWidth: 32 }}>
@@ -91,16 +95,33 @@ const Footer = () => {
 
           <Grid item xs={12} sm={6} md={3}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
-              Categorías
+              Mas Información
             </Typography>
-            <Typography component="a" href="#" target="_blank"  sx={{textDecoration:'none' ,display: 'block' }} variant="body2">Plantas de interior</Typography>
-            <Typography component="a" href="#" target="_blank"  sx={{textDecoration:'none' ,display: 'block' }} variant="body2">Plantas de exterior</Typography>
-            <Typography component="a" href="#" target="_blank"  sx={{textDecoration:'none' ,display: 'block' }} variant="body2">Exóticas</Typography>
-            <Typography component="a" href="#" target="_blank"  sx={{textDecoration:'none' ,display: 'block' }} variant="body2">Suculentas</Typography>
-            <Typography component="a" href="#" target="_blank"  sx={{textDecoration:'none' ,display: 'block' }} variant="body2">Tropicales</Typography>
+            <List dense>
+              <ListItem disablePadding>
+                <ListItemIcon sx={{ color: "#fff", minWidth: 32 }}>
+                  <LocalShippingIcon />
+                </ListItemIcon>
+                <ListItemText primary="Envíos a la zona" />
+              </ListItem>
+
+              <ListItem disablePadding>
+                <ListItemIcon sx={{ color: "#fff", minWidth: 32 }}>
+                  <SupportAgentIcon />
+                </ListItemIcon>
+                <ListItemText primary="Atención personalizada" />
+              </ListItem>
+
+              <ListItem disablePadding>
+                <ListItemIcon sx={{ color: "#fff", minWidth: 32 }}>
+                  <VerifiedIcon />
+                </ListItemIcon>
+                <ListItemText primary="Garantía asegurada" />
+              </ListItem>
+            </List>
           </Grid>
 
-          
+
           <Grid item xs={12} sm={6} md={3}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               Seguinos
@@ -128,7 +149,7 @@ const Footer = () => {
         {/* hr en mui se conoce como divider */}
         <Divider
           sx={{
-            borderColor: "#e8d9cb", 
+            borderColor: "#e8d9cb",
             mt: 4,
             mb: 2,
           }}

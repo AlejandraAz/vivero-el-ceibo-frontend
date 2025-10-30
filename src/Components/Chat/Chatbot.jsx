@@ -81,9 +81,9 @@ const ViveroChatbot = () => {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 
-                     text-white rounded-full shadow-xl flex items-center justify-center 
-                     hover:scale-110 hover:shadow-green-400/70 hover:shadow-lg 
-                     transition-all duration-300 cursor-pointer"
+                    text-white rounded-full shadow-xl flex items-center justify-center 
+                      hover:scale-110 hover:shadow-green-400/70 hover:shadow-lg 
+                      transition-all duration-300 cursor-pointer"
           style={{ zIndex: 9999 }}
         >
           <MessageCircle size={28} />
@@ -93,7 +93,7 @@ const ViveroChatbot = () => {
       {/* CAJA DEL CHAT */}
       {isOpen && (
         <div
-          className="fixed bottom-6 right-6 w-[420px] h-[520px] bg-white shadow-2xl rounded-xl flex flex-col border border-green-200"
+          className="chatbot-container fixed bottom-6 right-6 flex flex-col border border-green-200 bg-white shadow-2xl rounded-xl"
           style={{ zIndex: 9999 }}
         >
           {/* Header */}
@@ -117,9 +117,8 @@ const ViveroChatbot = () => {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${
-                  msg.sender === "user" ? "justify-end" : "justify-start items-end"
-                } space-x-2 animate-fade-in`}
+                className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start items-end"
+                  } space-x-2 animate-fade-in`}
               >
                 {/* Avatar del bot */}
                 {msg.sender === "bot" && (
@@ -130,11 +129,10 @@ const ViveroChatbot = () => {
 
                 {/* Mensaje */}
                 <div
-                  className={`px-4 py-2 rounded-2xl max-w-[70%] text-sm ${
-                    msg.sender === "user"
-                      ? "bg-emerald-900 text-white rounded-br-none"
-                      : "bg-white text-gray-800 border border-green-200 rounded-bl-none shadow"
-                  }`}
+                  className={`px-4 py-2 rounded-2xl max-w-[70%] text-sm ${msg.sender === "user"
+                    ? "bg-emerald-900 text-white rounded-br-none"
+                    : "bg-white text-gray-800 border border-green-200 rounded-bl-none shadow"
+                    }`}
                 >
                   {msg.text}
                   <div className="text-[10px] text-gray-400 mt-1 text-right">

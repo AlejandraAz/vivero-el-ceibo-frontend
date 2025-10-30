@@ -1,8 +1,7 @@
-// **prueba de que funcione al 100%
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useCart } from "../../context/CartContext.jsx";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../../Services/Api.js";
@@ -34,7 +33,7 @@ const CheckoutPage = () => {
   });
 
   // Método de envío
-  const [shippingMethod, setShippingMethod] = useState("retiro"); // retiro/envio
+  const [shippingMethod, setShippingMethod] = useState(""); // retiro/envio
   const [shippingData, setShippingData] = useState({
     street: user?.street || "",
     number: user?.streetNumber || "",
@@ -44,11 +43,10 @@ const CheckoutPage = () => {
   });
 
   // Método de pago
-  const [paymentMethod, setPaymentMethod] = useState("contra entrega");
+  const [paymentMethod, setPaymentMethod] = useState("");
 
 
   const handleConfirmPurchase = async () => {
-    console.log("✅ Click en Confirmar Compra");
 
     if (confirming) return;
 
@@ -74,12 +72,17 @@ const CheckoutPage = () => {
 
     // Validar pago
     if (!paymentMethod) {
-      newErrors.paymentMethod = "Selecciona un método de pago.";
+      newErrors.paymentMethod = "Por favor selecciona un método de pago.";
     }
 
     // Mostrar errores si existen
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      if (newErrors.paymentMethod) {
+        setOpenCard("pago");
+      }
+      else if (newErrors.shippingData || newErrors.shippingMethod)
+        setOpenCard("envio");
       toast.error("Por favor completa los campos requeridos.");
       return;
     }
@@ -131,9 +134,9 @@ const CheckoutPage = () => {
         items,
       };
 
-      console.log("🧾 Creando orden con datos:", orderPayload);
+      // console.log("🧾 Creando orden con datos:", orderPayload);
       const orderResponse = await api.post("/orders", orderPayload);
-      console.log("✅ Orden creada correctamente:", orderResponse.data);
+      // console.log("Orden creada correctamente:", orderResponse.data);
 
       // Limpiar carrito y asignar nuevo cartId
       setCart({ items: [], total: 0, cartId: orderResponse.data.newCartId });
@@ -209,27 +212,27 @@ const CheckoutPage = () => {
 
           {openCard === "envio" && (
             <div className="mt-4 space-y-2">
-              {/* Método de envío */}
-              <div className="flex gap-2 mb-2">
+              {/* Metodo de Envio */}
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                 <button
-                  className={`flex-1 py-2 cursor-pointer rounded border ${shippingMethod === "retiro"
-                      ? "bg-green-600 text-white"
-                      : "bg-white"
-                    }`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded border font-medium transition 
+      ${shippingMethod === "retiro" ? "bg-green-600 text-white" : "bg-white text-gray-800 hover:bg-gray-100"}`}
                   onClick={() => setShippingMethod("retiro")}
                 >
-                  Retiro en sucursal
+                  <span>Retiro en sucursal</span>
+                  {shippingMethod === "retiro" && <Check size={18} className="text-white" />}
                 </button>
+
                 <button
-                  className={`flex-1 py-2 rounded border ${shippingMethod === "envio"
-                      ? "bg-green-600 text-white"
-                      : "bg-white"
-                    }`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded border font-medium transition 
+      ${shippingMethod === "envio" ? "bg-green-600 text-white" : "bg-white text-gray-800 hover:bg-gray-100"}`}
                   onClick={() => setShippingMethod("envio")}
                 >
-                  Envío a domicilio
+                  <span>Envío a domicilio</span>
+                  {shippingMethod === "envio" && <Check size={18} className="text-white" />}
                 </button>
               </div>
+
 
               {/* Formulario de envío solo si eligió envío a domicilio */}
               {shippingMethod === "envio" && (

@@ -63,3 +63,34 @@ color: #45ec5e;
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
+
+/* Estilos Chatbot */
+/* Escritorio — por defecto */
+.chatbot-container {
+  width: 420px;
+  height: 520px;
+  border-radius: 12px;
+}
+
+/* Moviles */
+@media (max-width: 480px) {
+  .chatbot-container {
+    width: 95vw;
+    height: 75vh;
+    right: 50%;
+    transform: translateX(50%);
+    bottom: 10px;
+    border-radius: 16px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 481px) and (max-width: 820px) {
+  .chatbot-container {
+    width: 85vw;
+    height: 70vh;
+    right: 20px;
+    bottom: 20px;
+    border-radius: 18px;
+  }
+}

@@ -124,7 +124,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // 🧹 Limpiar carrito manualmente (por ejemplo, al hacer logout)
+  //  Limpiar carrito manualmente (por ejemplo, al hacer logout)
   const clearCart = () => {
     setCart({ items: [], total: 0, cartId: null });
   };

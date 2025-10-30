@@ -142,7 +142,7 @@ const FeaturedCarousel = () => {
                       setAddingId(item.id);
                       try {
                         await addItem({ id_product: item.id, quantity: 1 });
-                        toast.success(`"${item.name}" agregado al carrito 🛒`);
+                        // toast.success(`"${item.name}" agregado al carrito `);
                       } catch (err) {
                         console.error("Error al agregar producto:", err);
                         toast.error("No se pudo agregar el producto");
