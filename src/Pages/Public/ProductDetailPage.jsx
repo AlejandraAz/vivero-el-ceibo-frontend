@@ -182,7 +182,7 @@ const ProductDetailPage = () => {
           </p>
 
           {/* Cantidad y agregar al carrito */}
-          <div className="hidden md:flex items-center gap-4 mb-6">
+          <div className=" flex flex-col sm:flex-row items-center gap-4 mb-6">
             <div className="flex items-center border rounded">
               <button
                 onClick={() => handleQuantityChange("decrement")}

@@ -13,26 +13,65 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async () => {
 
     try {
-      const res = await api.get("/auth/protegida"); // si hay cookie válida, devuelve el usuario
+      const res = await api.get("/auth/protegida", {
+      timeout: 5000,
+      validateStatus: (status) => status < 500 // cualquier 4xx no rompe el catch
+    }); // si hay cookie válida, devuelve el usuario
 
       // setUser(res.data.user || null);
       const userData = res.data.user;
 
-      if (userData) {
-        //  Traigo perfil completo para tener photo, name, etc.
-              let fullUser;
-      if (userData.rol === "cliente") {
-        const profileRes = await api.get("/customer/profile");
-        fullUser = { ...userData, ...profileRes.data.profile };
-      } else if (userData.rol === "admin") {
-        const profileRes = await api.get("/admin/dashboard"); 
-        fullUser = { ...userData, ...profileRes.data.profile };
-      }
-      setUser(fullUser);
+      if (!userData) {
+      // Invitado → no espera más
+      setUser(null);
+      return;
+    }
 
-      } else {
-        setUser(null);
+      // if (userData) {
+        //  Traigo perfil completo para tener photo, name, etc.
+      //         let fullUser;
+      // if (userData.rol === "cliente") {
+      //   const profileRes = await api.get("/customer/profile");
+      //   fullUser = { ...userData, ...profileRes.data.profile };
+      // } else if (userData.rol === "admin") {
+      //   const profileRes = await api.get("/admin/dashboard"); 
+      //   fullUser = { ...userData, ...profileRes.data.profile };
+      // }
+      // setUser(fullUser);
+
+      // } else {
+      //   setUser(null);
+      // }
+
+      // if (userData.rol === "cliente") {
+      //     try {
+      //       const profileRes = await api.get("/customer/profile", { timeout: 5000 });
+      //       setUser({ ...userData, ...profileRes.data.profile });
+      //     } catch (err) {
+      //       console.error("Error trayendo perfil cliente:", err);
+      //       setUser(userData);
+      //     }
+      //   } else {
+      //     // Admin: solo datos del token
+      //     setUser(userData);
+      //   }
+      // } else {
+      //   setUser(null);
+      // }
+
+      else if (userData.rol === "cliente") {
+      try {
+        const profileRes = await api.get("/customer/profile", { timeout: 3000 });
+        setUser({ ...userData, ...profileRes.data.profile });
+      } catch (err) {
+        console.error("Error perfil cliente:", err);
+        setUser(userData);
       }
+    } else {
+      // Admin
+      setUser(userData);
+    }
+
     } catch (error) {
       console.log('mensaje de error', error)
       setUser(null); // no logueado
@@ -46,14 +85,25 @@ export const AuthProvider = ({ children }) => {
     // setUser(userData);
     try {
       // Traer perfil completo después de login
-      const profileRes = await api.get("/customer/profile");
-      const fullUser = { ...userData, ...profileRes.data.profile };
-      setUser(fullUser);
+    //   const profileRes = await api.get("/customer/profile");
+    //   const fullUser = { ...userData, ...profileRes.data.profile };
+    //   setUser(fullUser);
+    // } catch (error) {
+    //   console.error("login error:", error);
+    //   setUser(userData); // al menos guardamos datos básicos
+    // }
+     if (userData.rol === "cliente") {
+        const profileRes = await api.get("/customer/profile");
+        const fullUser = { ...userData, ...profileRes.data.profile };
+        setUser(fullUser);
+      } else {
+        setUser(userData); // Admin
+      }
     } catch (error) {
       console.error("login error:", error);
-      setUser(userData); // al menos guardamos datos básicos
+      setUser(userData);
     }
-  }
+  };
 
   const logout = async () => {
     // await api.post('/auth/logout');

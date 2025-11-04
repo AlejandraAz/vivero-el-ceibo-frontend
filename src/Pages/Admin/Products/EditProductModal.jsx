@@ -125,7 +125,7 @@ const EditProductModal = ({ isOpen, onClose, onSubmit, product = {}, categories 
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#f0e7dd] bg-opacity-40 p-4">
         <div className="bg-[#e9cbb0] rounded-lg shadow-lg w-full max-w-4xl flex flex-col overflow-hidden max-h-[90vh]">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-xl font-semibold text-gray-800">Editar Producto</h2>

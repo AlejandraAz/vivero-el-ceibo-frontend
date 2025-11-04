@@ -7,6 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 const MAX_FILES = 4;
 const MAX_MB_PER_FILE = 3;
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ERROR_COLOR = "#8B5E3C"; // marrón para errores
 
 const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -20,11 +21,15 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
     featured: false,
   });
 
+  const [errors, setErrors] = useState({});
+
   const editor = useEditor({
     extensions: [StarterKit],
     content: form.description,
     onUpdate: ({ editor }) => {
-      setForm((prev) => ({ ...prev, description: editor.getHTML() }));
+      const html = editor.getHTML();
+      setForm((prev) => ({ ...prev, description: html }));
+      // opcional: validar en cada update si querés validar descripción en vivo
     },
   });
 
@@ -49,7 +54,11 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
         images: [],
         featured: false,
       });
+      setErrors({});
+      // reset editor content too
+      if (editor) editor.commands.setContent("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const notify = (msg, type = "error") => {
@@ -58,13 +67,54 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
   };
 
   const validateFiles = (files) => {
-    const errors = [];
+    const errorsLocal = [];
     for (const f of files) {
-      if (!ACCEPTED_TYPES.includes(f.type)) errors.push(`Tipo no permitido: ${f.name}`);
+      if (!ACCEPTED_TYPES.includes(f.type)) errorsLocal.push(`Tipo no permitido: ${f.name}`);
       if (f.size > MAX_MB_PER_FILE * 1024 * 1024)
-        errors.push(`El archivo ${f.name} supera ${MAX_MB_PER_FILE}MB`);
+        errorsLocal.push(`El archivo ${f.name} supera ${MAX_MB_PER_FILE}MB`);
     }
-    return errors;
+    return errorsLocal;
+  };
+
+  // Validación por campo
+  const validateField = (name, value) => {
+    switch (name) {
+      case "name":
+        if (!value || value.trim().length < 2) return "El nombre es obligatorio (mín. 2 caracteres).";
+        return "";
+      case "description":
+        // Nota: editor guarda HTML; validamos texto sin etiquetas para longitud mínima
+        const text = value ? value.replace(/<[^>]*>/g, "").trim() : "";
+        if (!text || text.length < 10) return "La descripción es obligatoria (mín. 10 caracteres).";
+        return "";
+      case "price":
+        if (value === "" || value === null) return "El precio es obligatorio.";
+        if (isNaN(Number(value)) || Number(value) <= 0) return "Precio debe ser un número mayor a 0.";
+        return "";
+      case "stock":
+        if (value === "" || value === null) return "El stock es obligatorio.";
+        if (!Number.isInteger(Number(value)) || Number(value) < 0) return "Stock debe ser un entero >= 0.";
+        return "";
+      case "id_category":
+        if (!value) return "Seleccioná una categoría.";
+        return "";
+      case "images":
+        if (!value || value.length === 0) return "Subí al menos 1 imagen.";
+        if (value.length > MAX_FILES) return `Máximo ${MAX_FILES} imágenes.`;
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const validateForm = (currentForm) => {
+    const newErrors = {};
+    ["name", "description", "price", "stock", "id_category", "images"].forEach((f) => {
+      const val = currentForm[f];
+      const err = validateField(f, val);
+      if (err) newErrors[f] = err;
+    });
+    return newErrors;
   };
 
   const addFiles = (incoming) => {
@@ -72,9 +122,18 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
     const spaceLeft = MAX_FILES - current.length;
     if (incoming.length > spaceLeft) notify(`Máximo ${MAX_FILES} imágenes. Solo se tomarán ${spaceLeft}.`);
     const toAdd = Array.from(incoming).slice(0, Math.max(0, spaceLeft));
-    const errors = validateFiles(toAdd);
-    if (errors.length) return notify(errors.join("\n"));
-    setForm((prev) => ({ ...prev, images: [...prev.images, ...toAdd] }));
+    const fileErrors = validateFiles(toAdd);
+    if (fileErrors.length) {
+      // mostrar errores de archivos en UI
+      setErrors((prev) => ({ ...prev, images: fileErrors.join("\n") }));
+      return notify(fileErrors.join("\n"));
+    }
+    setForm((prev) => {
+      const updated = { ...prev, images: [...prev.images, ...toAdd] };
+      // limpiar error si se resolvió
+      setErrors((errPrev) => ({ ...errPrev, images: validateField("images", updated.images) || undefined }));
+      return updated;
+    });
   };
 
   const handleDragOver = (e) => {
@@ -92,17 +151,48 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
 
   const handleChange = (e) => {
     const { name, value, files, type, checked } = e.target;
-    if (name === "images") return addFiles(files);
-    if (type === "checkbox") return setForm((prev) => ({ ...prev, [name]: checked }));
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "images") {
+      addFiles(files);
+      return;
+    }
+    if (type === "checkbox") {
+      setForm((prev) => ({ ...prev, [name]: checked }));
+      return;
+    }
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      // validar campo en el cambio y limpiar error si corresponde
+      const fieldError = validateField(name, updated[name]);
+      setErrors((prevErr) => ({ ...prevErr, [name]: fieldError || undefined }));
+      return updated;
+    });
+  };
+
+  // validar campo cuando pierde foco (opcional)
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    const val = form[name];
+    const err = validateField(name, val);
+    setErrors((prev) => ({ ...prev, [name]: err || undefined }));
   };
 
   const removeImageAt = (idx) =>
-    setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+    setForm((prev) => {
+      const updatedImgs = prev.images.filter((_, i) => i !== idx);
+      setErrors((prevErr) => ({ ...prevErr, images: validateField("images", updatedImgs) || undefined }));
+      return { ...prev, images: updatedImgs };
+    });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (form.images.length === 0) return notify("Subí al menos 1 imagen.");
+    const currentForm = { ...form };
+    const newErrors = validateForm(currentForm);
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      notify("Corregí los errores antes de continuar.");
+      return;
+    }
+    // crear FormData igual que antes
     const fd = new FormData();
     fd.append("name", form.name.trim());
     fd.append("description", form.description.trim());
@@ -116,6 +206,10 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
   };
 
   if (!isOpen) return null;
+
+  // helper para clases de borde cuando hay error
+  const inputBorderClass = (field) =>
+    errors[field] ? `border-[${ERROR_COLOR}]` : `border-[#B08968]`;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-[#f0e7dd] bg-opacity-60 z-50">
@@ -139,11 +233,13 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
             name="name"
             value={form.name}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="Nombre del producto"
-            className="w-full p-2 border rounded bg-[#F0EFEB] focus:outline-none"
-            style={{ borderColor: "#B08968" }}
+            className={`w-full p-2 border rounded bg-[#F0EFEB] focus:outline-none ${inputBorderClass("name")}`}
+            style={{ borderColor: errors.name ? ERROR_COLOR : "#B08968" }}
             required
           />
+          {errors.name && <p className="text-sm mt-1" style={{ color: ERROR_COLOR }}>{errors.name}</p>}
 
           {/* Editor con scroll interno */}
           <div>
@@ -164,9 +260,13 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
                 <ListOrdered size={18} />
               </button>
             </div>
-            <div className="w-full p-2 border rounded bg-[#F0EFEB] max-h-40 overflow-y-auto">
+            <div
+              className="w-full p-2 border rounded bg-[#F0EFEB] max-h-40 overflow-y-auto"
+              style={{ borderColor: errors.description ? ERROR_COLOR : "#B08968" }}
+            >
               <EditorContent editor={editor} />
             </div>
+            {errors.description && <p className="text-sm mt-1" style={{ color: ERROR_COLOR }}>{errors.description}</p>}
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -175,10 +275,11 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
               name="price"
               value={form.price}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Precio"
               step="0.01"
-              className="p-2 border rounded bg-[#F0EFEB] focus:outline-none"
-              style={{ borderColor: "#B08968" }}
+              className={`p-2 border rounded bg-[#F0EFEB] focus:outline-none ${inputBorderClass("price")}`}
+              style={{ borderColor: errors.price ? ERROR_COLOR : "#B08968" }}
               required
             />
             <input
@@ -186,17 +287,19 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
               name="stock"
               value={form.stock}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Stock"
-              className="p-2 border rounded bg-[#F0EFEB] focus:outline-none"
-              style={{ borderColor: "#B08968" }}
+              className={`p-2 border rounded bg-[#F0EFEB] focus:outline-none ${inputBorderClass("stock")}`}
+              style={{ borderColor: errors.stock ? ERROR_COLOR : "#B08968" }}
               required
             />
             <select
               name="id_category"
               value={form.id_category}
               onChange={handleChange}
-              className="p-2 border rounded bg-[#F0EFEB] focus:border-[#B08968] focus:ring-[#B08968] focus:outline-none"
-              style={{ borderColor: "#B08968" }}
+              onBlur={handleBlur}
+              className={`p-2 border rounded bg-[#F0EFEB] focus:border-[#B08968] focus:ring-[#B08968] focus:outline-none`}
+              style={{ borderColor: errors.id_category ? ERROR_COLOR : "#B08968" }}
               required
             >
               <option value="">Categoría</option>
@@ -211,16 +314,18 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
               )}
             </select>
           </div>
+          {errors.price && <p className="text-sm mt-1" style={{ color: ERROR_COLOR }}>{errors.price}</p>}
+          {errors.stock && <p className="text-sm mt-1" style={{ color: ERROR_COLOR }}>{errors.stock}</p>}
+          {errors.id_category && <p className="text-sm mt-1" style={{ color: ERROR_COLOR }}>{errors.id_category}</p>}
 
           {/* Dropzone */}
           <div
-            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
-              isDragging ? "border-green-600 bg-green-50" : "border-[#B08968] bg-[#F0EFEB]"
-            }`}
+            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${isDragging ? "border-green-600 bg-green-50" : "bg-[#F0EFEB]"}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => document.getElementById("product-file-input")?.click()}
+            style={{ borderColor: errors.images ? ERROR_COLOR : "#B08968" }}
           >
             <Upload size={24} className="mx-auto text-gray-500 mb-2" />
             <p className="text-gray-700">
@@ -239,6 +344,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, categories }) => {
               onChange={handleChange}
             />
           </div>
+          {errors.images && <p className="text-sm mt-1 whitespace-pre-line" style={{ color: ERROR_COLOR }}>{errors.images}</p>}
 
           {/* Previews */}
           {form.images.length > 0 && (
